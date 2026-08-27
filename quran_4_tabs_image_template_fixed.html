@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qur'an Sequence</title>
+
+<style>
+:root{
+  --bg:#f4f1e8;
+  --paper:#fffdf8;
+  --line:#e1d9c8;
+  --green:#dcefe1;
+  --greenb:#77a685;
+  --red:#f5dddd;
+  --redb:#c67d7d;
+  --shadow:0 5px 16px rgba(57,47,38,.10);
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:#3f403d;
+  font-family:Segoe UI,Arial,sans-serif;
+}
+
+.wrap{
+  width:calc(100% - 28px);
+  max-width:none;
+  margin:0 auto;
+  padding:14px 0 40px;
+}
+
+/* ---------- TABS ---------- */
+.tabs{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin:0 0 12px;
+}
+
+.tab-btn{
+  width:100%;
+  border:1px solid #d6b56a;
+  background:#fff8e8;
+  color:#6b4b12;
+  border-radius:12px;
+  padding:10px 14px;
+  font-size:17px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.tab-btn.active{
+  background:#b8862c;
+  color:#fff;
+  border-color:#b8862c;
+  box-shadow:0 4px 12px rgba(0,0,0,.12);
+}
+
+.tab-btn:hover{transform:translateY(-1px)}
+
+.tab-note{
+  text-align:center;
+  margin:0 0 10px;
+  font-size:13px;
+  color:#777;
+}
+
+.instructions{
+  text-align:center;
+  font-size:14px;
+  margin:0 0 12px;
+}
+
+/* ---------- TILES ---------- */
+#board{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:14px;
+  width:100%;
+}
+
+.tile{
+  background:var(--paper);
+  border:2px solid transparent;
+  border-radius:18px;
+  min-height:108px;
+  padding:12px;
+  box-shadow:var(--shadow);
+  cursor:grab;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:.15s transform,.15s border-color,.15s background;
+  user-select:none;
+  touch-action:none;
+}
+
+.tile:active{
+  cursor:grabbing;
+  transform:scale(.995);
+}
+
+.tile.dragging{opacity:.45}
+.tile.over{border-color:#9fb3a5}
+
+.tile.correct{
+  background:var(--green);
+  border-color:var(--greenb);
+}
+
+.tile.wrong{
+  background:var(--red);
+  border-color:var(--redb);
+}
+
+.num{
+  position:absolute;
+  top:8px;
+  left:10px;
+  z-index:2;
+  font:700 12px/1 Segoe UI,Arial;
+  color:#7e8b86;
+  background:#eef2ef;
+  border-radius:999px;
+  padding:5px 8px;
+}
+
+.qtext{
+  direction:rtl;
+  text-align:center;
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:80px;
+  overflow:hidden;
+}
+
+/* ---------- IMAGE TILES ---------- */
+.arabic-tile-img{
+  display:block;
+  width:100%;
+  max-width:100%;
+  height:auto;
+  max-height:120px;
+  object-fit:contain;
+  margin:auto;
+  user-select:none;
+  -webkit-user-drag:none;
+  pointer-events:none;
+}
+
+/* ---------- BUTTONS ---------- */
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:18px;
+}
+
+button.control{
+  border:0;
+  border-radius:13px;
+  padding:12px 18px;
+  font-weight:800;
+  font-size:15px;
+  cursor:pointer;
+  box-shadow:0 6px 14px rgba(57,47,38,.09);
+}
+
+.primary{background:#607e6e;color:white}
+.secondary{background:#ead9bd;color:#4f4436}
+.ghost{background:white;color:#53625d;border:1px solid var(--line)}
+
+button:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+}
+
+#message{
+  min-height:28px;
+  margin:15px 2px 0;
+  font-weight:800;
+  font-size:17px;
+}
+
+#answer{
+  display:none;
+  margin-top:18px;
+  background:white;
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:20px;
+  box-shadow:var(--shadow);
+}
+
+#answer h2{
+  font-size:18px;
+  margin:0 0 14px;
+}
+
+.answer-grid{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+}
+
+.answer-item{
+  background:#fbf8f1;
+  border-radius:14px;
+  padding:10px;
+  min-height:90px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.answer-item img{
+  width:100%;
+  max-height:100px;
+  object-fit:contain;
+}
+
+/* ---------- TABLET ---------- */
+@media(max-width:1000px){
+  #board{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+
+  .answer-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+
+/* ---------- MOBILE ---------- */
+@media(max-width:760px){
+  .wrap{
+    width:calc(100% - 16px);
+    padding-top:10px;
+  }
+
+  .tabs{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+
+  .tab-btn{
+    font-size:16px;
+    padding:9px 8px;
+  }
+
+  #board{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+
+  .tile{
+    min-height:96px;
+    padding:10px;
+  }
+
+  .arabic-tile-img{
+    max-height:95px;
+  }
+
+  .qtext{
+    min-height:68px;
+  }
+
+  .controls{
+    gap:8px;
+  }
+
+  button.control{
+    padding:10px 13px;
+    font-size:13px;
+  }
+
+  .answer-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+/* ---------- VERY SMALL MOBILE ---------- */
+@media(max-width:430px){
+  .tabs{
+    grid-template-columns:1fr;
+  }
+
+  #board{
+    grid-template-columns:1fr;
+  }
+
+  .tile{
+    min-height:90px;
+  }
+
+  .arabic-tile-img{
+    max-height:90px;
+  }
+
+  .answer-grid{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+  <div class="tabs" role="tablist" aria-label="Qur'an categories">
+    <button class="tab-btn active" data-tab="0" role="tab">إخلاص</button>
+    <button class="tab-btn" data-tab="1" role="tab">تواضع</button>
+    <button class="tab-btn" data-tab="2" role="tab">ديانة</button>
+    <button class="tab-btn" data-tab="3" role="tab">أمانة</button>
+  </div>
+
+  <div class="tab-note" id="tabNote">إخلاص — 10 tiles</div>
+
+  <div class="instructions">
+    Drag the tiles into the correct Qur'anic sequence. Then press <b>Submit</b>.
+    Correct positions turn green; incorrect positions turn red.
+  </div>
+
+  <div id="board"></div>
+
+  <div class="controls">
+    <button class="control primary" id="submit">Submit</button>
+    <button class="control secondary" id="shuffle">Shuffle</button>
+    <button class="control ghost" id="reset">Reset</button>
+    <button class="control ghost" id="show">Show correct sequence</button>
+  </div>
+
+  <div id="message"></div>
+
+  <div id="answer">
+    <h2>Correct sequence</h2>
+    <div class="answer-grid" id="answerText"></div>
+  </div>
+
+</div>
+
+<script>
+
+/*
+==========================================================
+IMAGE FILE SETUP
+==========================================================
+
+Put an "images" folder next to this HTML file.
+
+Example:
+
+quran_4_tabs_image_template_fixed.html
+images/
+  ikhlas-01.png
+  ikhlas-02.png
+  ...
+  ikhlas-10.png
+
+  tawadu-01.png
+  ...
+  tawadu-10.png
+
+  diyana-01.png
+  ...
+  diyana-10.png
+
+  amanah-01.png
+  ...
+  amanah-10.png
+
+The filenames below are the only thing you need to change
+if you want to use different image names.
+==========================================================
+*/
+
+const items = [
+  {id:0, html:'<img class="arabic-tile-img" src="images/ikhlas-01.png" alt="Ikhlas 1">'},
+  {id:1, html:'<img class="arabic-tile-img" src="images/ikhlas-02.png" alt="Ikhlas 2">'},
+  {id:2, html:'<img class="arabic-tile-img" src="images/ikhlas-03.png" alt="Ikhlas 3">'},
+  {id:3, html:'<img class="arabic-tile-img" src="images/ikhlas-04.png" alt="Ikhlas 4">'},
+  {id:4, html:'<img class="arabic-tile-img" src="images/ikhlas-05.png" alt="Ikhlas 5">'},
+  {id:5, html:'<img class="arabic-tile-img" src="images/ikhlas-06.png" alt="Ikhlas 6">'},
+  {id:6, html:'<img class="arabic-tile-img" src="images/ikhlas-07.png" alt="Ikhlas 7">'},
+  {id:7, html:'<img class="arabic-tile-img" src="images/ikhlas-08.png" alt="Ikhlas 8">'},
+  {id:8, html:'<img class="arabic-tile-img" src="images/ikhlas-09.png" alt="Ikhlas 9">'},
+  {id:9, html:'<img class="arabic-tile-img" src="images/ikhlas-10.png" alt="Ikhlas 10">'}
+];
+
+const tawaduItems = [
+  {id:0, html:'<img class="arabic-tile-img" src="images/tawadu-01.png" alt="Tawadu 1">'},
+  {id:1, html:'<img class="arabic-tile-img" src="images/tawadu-02.png" alt="Tawadu 2">'},
+  {id:2, html:'<img class="arabic-tile-img" src="images/tawadu-03.png" alt="Tawadu 3">'},
+  {id:3, html:'<img class="arabic-tile-img" src="images/tawadu-04.png" alt="Tawadu 4">'},
+  {id:4, html:'<img class="arabic-tile-img" src="images/tawadu-05.png" alt="Tawadu 5">'},
+  {id:5, html:'<img class="arabic-tile-img" src="images/tawadu-06.png" alt="Tawadu 6">'},
+  {id:6, html:'<img class="arabic-tile-img" src="images/tawadu-07.png" alt="Tawadu 7">'},
+  {id:7, html:'<img class="arabic-tile-img" src="images/tawadu-08.png" alt="Tawadu 8">'},
+  {id:8, html:'<img class="arabic-tile-img" src="images/tawadu-09.png" alt="Tawadu 9">'},
+  {id:9, html:'<img class="arabic-tile-img" src="images/tawadu-10.png" alt="Tawadu 10">'}
+];
+
+const diyanaItems = [
+  {id:0, html:'<img class="arabic-tile-img" src="images/diyana-01.png" alt="Diyana 1">'},
+  {id:1, html:'<img class="arabic-tile-img" src="images/diyana-02.png" alt="Diyana 2">'},
+  {id:2, html:'<img class="arabic-tile-img" src="images/diyana-03.png" alt="Diyana 3">'},
+  {id:3, html:'<img class="arabic-tile-img" src="images/diyana-04.png" alt="Diyana 4">'},
+  {id:4, html:'<img class="arabic-tile-img" src="images/diyana-05.png" alt="Diyana 5">'},
+  {id:5, html:'<img class="arabic-tile-img" src="images/diyana-06.png" alt="Diyana 6">'},
+  {id:6, html:'<img class="arabic-tile-img" src="images/diyana-07.png" alt="Diyana 7">'},
+  {id:7, html:'<img class="arabic-tile-img" src="images/diyana-08.png" alt="Diyana 8">'},
+  {id:8, html:'<img class="arabic-tile-img" src="images/diyana-09.png" alt="Diyana 9">'},
+  {id:9, html:'<img class="arabic-tile-img" src="images/diyana-10.png" alt="Diyana 10">'}
+];
+
+const amanahItems = [
+  {id:0, html:'<img class="arabic-tile-img" src="images/amanah-01.png" alt="Amanah 1">'},
+  {id:1, html:'<img class="arabic-tile-img" src="images/amanah-02.png" alt="Amanah 2">'},
+  {id:2, html:'<img class="arabic-tile-img" src="images/amanah-03.png" alt="Amanah 3">'},
+  {id:3, html:'<img class="arabic-tile-img" src="images/amanah-04.png" alt="Amanah 4">'},
+  {id:4, html:'<img class="arabic-tile-img" src="images/amanah-05.png" alt="Amanah 5">'},
+  {id:5, html:'<img class="arabic-tile-img" src="images/amanah-06.png" alt="Amanah 6">'},
+  {id:6, html:'<img class="arabic-tile-img" src="images/amanah-07.png" alt="Amanah 7">'},
+  {id:7, html:'<img class="arabic-tile-img" src="images/amanah-08.png" alt="Amanah 8">'},
+  {id:8, html:'<img class="arabic-tile-img" src="images/amanah-09.png" alt="Amanah 9">'},
+  {id:9, html:'<img class="arabic-tile-img" src="images/amanah-10.png" alt="Amanah 10">'}
+];
+
+const tabItems = [
+  items,
+  tawaduItems,
+  diyanaItems,
+  amanahItems
+];
+
+/*
+IMPORTANT:
+These are only the STARTING arrangements.
+
+Later, when you give me the real correct answers,
+we will change the correctOrders array.
+
+Example:
+correctOrders[0] = [3,7,1,10...]
+*/
+const correctOrders = [
+  [0,1,2,3,4,5,6,7,8,9],
+  [0,1,2,3,4,5,6,7,8,9],
+  [0,1,2,3,4,5,6,7,8,9],
+  [0,1,2,3,4,5,6,7,8,9]
+];
+
+/* Starting jumble shown to the student */
+const initialOrders = [
+  [6,1,8,3,0,9,4,7,2,5],
+  [0,1,2,3,4,5,6,7,8,9],
+  [0,1,2,3,4,5,6,7,8,9],
+  [0,1,2,3,4,5,6,7,8,9]
+];
+
+const tabNames = ['إخلاص','تواضع','ديانة','أمانة'];
+
+let activeTab = 0;
+let orders = initialOrders.map(order => [...order]);
+let dragIndex = null;
+
+const board = document.getElementById('board');
+const msg = document.getElementById('message');
+const answer = document.getElementById('answer');
+const answerText = document.getElementById('answerText');
+const tabNote = document.getElementById('tabNote');
+
+function currentItems(){
+  return tabItems[activeTab];
+}
+
+function currentOrder(){
+  return orders[activeTab];
+}
+
+/* ---------- RENDER ---------- */
+
+function render(){
+  board.innerHTML = '';
+
+  const arr = currentItems();
+  const order = currentOrder();
+
+  order.forEach((id,pos) => {
+
+    const el = document.createElement('div');
+
+    el.className = 'tile';
+    el.draggable = true;
+    el.dataset.pos = pos;
+
+    el.innerHTML =
+      `<span class="num">${pos + 1}</span>
+       <div class="qtext">${arr[id].html}</div>`;
+
+    /* Desktop drag */
+    el.addEventListener('dragstart', () => {
+      dragIndex = pos;
+      el.classList.add('dragging');
+    });
+
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+      dragIndex = null;
+      document.querySelectorAll('.tile')
+        .forEach(x => x.classList.remove('over'));
+    });
+
+    el.addEventListener('dragover', e => {
+      e.preventDefault();
+      el.classList.add('over');
+    });
+
+    el.addEventListener('dragleave', () => {
+      el.classList.remove('over');
+    });
+
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      el.classList.remove('over');
+
+      if(dragIndex === null || dragIndex === pos) return;
+
+      const a = currentOrder();
+      const moved = a.splice(dragIndex,1)[0];
+
+      a.splice(pos,0,moved);
+
+      render();
+    });
+
+    board.appendChild(el);
+  });
+
+  tabNote.textContent = `${tabNames[activeTab]} — 10 tiles`;
+
+  msg.textContent = '';
+  answer.style.display = 'none';
+}
+
+/* ---------- TAB SWITCH ---------- */
+
+function switchTab(index){
+
+  activeTab = index;
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle(
+      'active',
+      Number(btn.dataset.tab) === index
+    );
+  });
+
+  render();
+}
+
+/* ---------- SUBMIT ---------- */
+
+function submitAnswer(){
+
+  const correct = correctOrders[activeTab];
+  const order = currentOrder();
+
+  let score = 0;
+
+  [...board.children].forEach((el,pos) => {
+
+    el.classList.remove('correct','wrong');
+
+    if(order[pos] === correct[pos]){
+      el.classList.add('correct');
+      score++;
+    }else{
+      el.classList.add('wrong');
+    }
+
+  });
+
+  if(score === 10){
+
+    msg.textContent =
+      'Excellent — all 10 tiles are in the correct sequence.';
+
+  }else{
+
+    msg.textContent =
+      `${score} / 10 tiles are in the correct position. Try again.`;
+  }
+}
+
+/* ---------- SHUFFLE ---------- */
+
+function shuffle(){
+
+  const a = currentOrder();
+
+  for(let i=a.length-1;i>0;i--){
+
+    const j = Math.floor(Math.random()*(i+1));
+
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+
+  msg.textContent = '';
+  answer.style.display = 'none';
+
+  render();
+}
+
+/* ---------- RESET ---------- */
+
+function reset(){
+
+  orders[activeTab] =
+    [...initialOrders[activeTab]];
+
+  msg.textContent = '';
+  answer.style.display = 'none';
+
+  render();
+}
+
+/* ---------- SHOW CORRECT SEQUENCE ---------- */
+
+function showAnswer(){
+
+  const arr = currentItems();
+  const correct = correctOrders[activeTab];
+
+  answerText.innerHTML = '';
+
+  correct.forEach((id,pos) => {
+
+    const box = document.createElement('div');
+
+    box.className = 'answer-item';
+
+    box.innerHTML = arr[id].html;
+
+    answerText.appendChild(box);
+  });
+
+  answer.style.display = 'block';
+}
+
+/* ---------- EVENTS ---------- */
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+
+  btn.addEventListener('click', () => {
+    switchTab(Number(btn.dataset.tab));
+  });
+
+});
+
+document.getElementById('submit')
+  .addEventListener('click', submitAnswer);
+
+document.getElementById('shuffle')
+  .addEventListener('click', shuffle);
+
+document.getElementById('reset')
+  .addEventListener('click', reset);
+
+document.getElementById('show')
+  .addEventListener('click', showAnswer);
+
+/* ---------- START ---------- */
+
+render();
+
+</script>
+
+</body>
+</html>
